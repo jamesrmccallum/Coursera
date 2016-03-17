@@ -1,6 +1,7 @@
 import pandas as pd 
 import numpy 
 import statsmodels.formula.api as smf
+import scipy.stats as stats 
 
 print ('reading data file...')
 data = pd.read_csv('nesarc_pds.csv', low_memory=False)
@@ -29,6 +30,7 @@ drinkers['S7Q31A'] = drinkers['S7Q31A'].map({1:'SA',2:'NO_SA'}) # Give S7Q31A mo
 
 anova_set = drinkers[['S2BQ3B','S7Q31A']].dropna()
 
+#ANOVA
 model1= smf.ols(formula='S2BQ3B ~ C(S7Q31A)',data=anova_set).fit()
 print (model1.summary())
 
@@ -37,6 +39,21 @@ print (anova_set.groupby('S7Q31A').mean())
 print ('stdev for S2BQ3B by social anxiety status')
 print (anova_set.groupby('S7Q31A').std())
 
+#CHI SQUARE 
+drinkers['ABUSECNT_GRP'] = pd.cut(drinkers['S2BQ3B'],bins=[0,10,20,30,40,50,60,70,80,90,100], labels=[0,10,20,30,40,50,60,70,80,90])
+
+print(drinkers['ABUSECNT_GRP'].value_counts())
+
+remap = {0:0,10:10,20:20,30:30,40:40,90:90}
+drinkers['ABUSECNT_GRP2'] = drinkers['ABUSECNT_GRP'].map(remap)
+
+print(drinkers['ABUSECNT_GRP2'].value_counts())
+
+ct= pd.crosstab(drinkers['S7Q31A'],drinkers['ABUSECNT_GRP2'])
+print(ct)
+
+cs = stats.chi2_contingency(ct)
+print(cs)
 #print('#S2AQ10 - HOW OFTEN DRANK ENOUGH TO FEEL INTOXICATED IN LAST 12 MONTHS')
 #['S2AQ8B'] NUMBER OF DRINKS OF ANY ALCOHOL USUALLY CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS
 #S2AQ8C LARGEST NUMBER OF DRINKS OF ANY ALCOHOL CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS
