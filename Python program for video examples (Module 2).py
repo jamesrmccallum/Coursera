@@ -2,6 +2,8 @@ import pandas as pd
 import numpy 
 import statsmodels.formula.api as smf
 import scipy.stats as stats 
+import itertools
+from IPython.display import display, HTML 
 
 print ('reading data file...')
 data = pd.read_csv('nesarc_pds.csv', low_memory=False)
@@ -54,6 +56,33 @@ print(ct)
 
 cs = stats.chi2_contingency(ct)
 print(cs)
+
+bonferroni = 0.05 / 10
+#Post Hoc Paired Comparisons 
+i = 0
+result= []
+for key in itertools.permutations(pd.Series.unique(drinkers['ABUSECNT_GRP2'].dropna()),2):
+    label = 'POSTHOC_' + str(i)    
+    _map = {key[0]: key[0], key[1]:key[1]}
+    drinkers[label] = drinkers['ABUSECNT_GRP'].map(_map)   
+    ct_ = pd.crosstab(drinkers['S7Q31A'],drinkers[label])
+    colpct = ct_/ct_.sum(axis=0)
+    cs_ = stats.chi2_contingency(ct_)
+    print('Post Hoc Analysis ' + str(i) + ' comparing ' + str(key[0]) + ' with ' + str(key[1]) + '________________________________________________')
+    
+    print('\nCrosstab for pair comparison \n')
+    print(ct_)
+    print('\nFrequency distribution as % values\n')
+    print(colpct)
+    print ('\nChi Square Contingency Table for post hoc ' + str(i))
+    print(cs_)
+    out = {'KEY': str(key), 'CS':cs_[0], 'P': cs_[1] }
+    result.append(out)
+    print('\n')
+    i += 1
+    del drinkers[label]
+
+print(result) 
 #print('#S2AQ10 - HOW OFTEN DRANK ENOUGH TO FEEL INTOXICATED IN LAST 12 MONTHS')
 #['S2AQ8B'] NUMBER OF DRINKS OF ANY ALCOHOL USUALLY CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS
 #S2AQ8C LARGEST NUMBER OF DRINKS OF ANY ALCOHOL CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS
