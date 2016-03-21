@@ -3,7 +3,6 @@ import numpy
 import statsmodels.formula.api as smf
 import scipy.stats as stats 
 import itertools
-from IPython.display import display, HTML 
 
 print ('reading data file...')
 data = pd.read_csv('nesarc_pds.csv', low_memory=False)
@@ -30,9 +29,8 @@ for col in ['S2BQ1A2','S2BQ1A4','S2BQ1A7']: # Set missing values to Nan
 
 drinkers['S7Q31A'] = drinkers['S7Q31A'].map({1:'SA',2:'NO_SA'}) # Give S7Q31A more intuitive names
 
-anova_set = drinkers[['S2BQ3B','S7Q31A']].dropna()
-
 #ANOVA
+anova_set = drinkers[['S2BQ3B','S7Q31A']].dropna()
 model1= smf.ols(formula='S2BQ3B ~ C(S7Q31A)',data=anova_set).fit()
 print (model1.summary())
 
