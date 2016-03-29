@@ -1,6 +1,5 @@
 import pandas as pd 
 import numpy 
-import statsmodels.formula.api as smf
 import scipy.stats as stats 
 import seaborn as sns
 import matplotlib.pyplot as plot
@@ -34,8 +33,8 @@ drinkers['S7Q31A'] = drinkers['S7Q31A'].map({1:'SA',2:'NO_SA'}) # Give S7Q31A mo
 
 drinkers_clean = drinkers[['S2BQ3B','S2AQ8B']].dropna()
 
-plt = sns.regplot(drinkers_clean['S2BQ3B'],drinkers_clean['S2AQ8B'])
-plt.set(xlabel='Number of episodes of alcohol abuse', ylabel='Number of drinks usually consumed')
+plt = sns.regplot(drinkers_clean['S2AQ8B'],drinkers_clean['S2BQ3B'])
+plt.set(xlabel='Number of drinks usually consumed', ylabel='Number of episodes of alcohol abuse')
 
 stats.pearsonr(drinkers_clean['S2BQ3B'],drinkers_clean['S2AQ8B'])
 

@@ -3,6 +3,7 @@ import numpy
 import statsmodels.formula.api as smf
 import scipy.stats as stats 
 import itertools
+import seaborn as sns
 
 print ('reading data file...')
 data = pd.read_csv('nesarc_pds.csv', low_memory=False)
@@ -26,61 +27,20 @@ for col in drinkers: # Convert columns to numeric and replace 99's and nulls
 
 for col in ['S2BQ1A2','S2BQ1A4','S2BQ1A7']: # Set missing values to Nan
     drinkers[col]=drinkers[col].replace(9 ,numpy.nan).fillna(numpy.nan)
-
-drinkers['S7Q31A'] = drinkers['S7Q31A'].map({1:'SA',2:'NO_SA'}) # Give S7Q31A more intuitive names
-
-#ANOVA
-anova_set = drinkers[['S2BQ3B','S7Q31A']].dropna()
-model1= smf.ols(formula='S2BQ3B ~ C(S7Q31A)',data=anova_set).fit()
-print (model1.summary())
-
-print ('Means for S2BQ3B by social anxiety status')
-print (anova_set.groupby('S7Q31A').mean())
-print ('stdev for S2BQ3B by social anxiety status')
-print (anova_set.groupby('S7Q31A').std())
-
-#CHI SQUARE 
-drinkers['ABUSECNT_GRP'] = pd.cut(drinkers['S2BQ3B'],bins=[0,10,20,30,40,50,60,70,80,90,100], labels=[0,10,20,30,40,50,60,70,80,90])
-
-print(drinkers['ABUSECNT_GRP'].value_counts())
-
-remap = {0:0,10:10,20:20,30:30,40:40,90:90}
-drinkers['ABUSECNT_GRP2'] = drinkers['ABUSECNT_GRP'].map(remap)
-
-print(drinkers['ABUSECNT_GRP2'].value_counts())
-
-ct= pd.crosstab(drinkers['S7Q31A'],drinkers['ABUSECNT_GRP2'])
-print(ct)
-
-cs = stats.chi2_contingency(ct)
-print(cs)
-
-bonferroni = 0.05 / 10
-#Post Hoc Paired Comparisons 
-i = 0
-result= []
-for key in itertools.permutations(pd.Series.unique(drinkers['ABUSECNT_GRP2'].dropna()),2):
-    label = 'POSTHOC_' + str(i)    
-    _map = {key[0]: key[0], key[1]:key[1]}
-    drinkers[label] = drinkers['ABUSECNT_GRP'].map(_map)   
-    ct_ = pd.crosstab(drinkers['S7Q31A'],drinkers[label])
-    colpct = ct_/ct_.sum(axis=0)
-    cs_ = stats.chi2_contingency(ct_)
-    print('Post Hoc Analysis ' + str(i) + ' comparing ' + str(key[0]) + ' with ' + str(key[1]) + '________________________________________________')
     
-    print('\nCrosstab for pair comparison \n')
-    print(ct_)
-    print('\nFrequency distribution as % values\n')
-    print(colpct)
-    print ('\nChi Square Contingency Table for post hoc ' + str(i))
-    print(cs_)
-    out = {'KEY': str(key), 'CS':cs_[0], 'P': cs_[1] }
-    result.append(out)
-    print('\n')
-    i += 1
-    del drinkers[label]
+drinkers['S7Q31A'] = drinkers['S7Q31A'].map({1:1,2:0})
+    
+# Does the presence of social anxiety moderate the relationship between the number of usual drinks and the amount of times drank to abuse
 
-print(result) 
+SA = drinkers[(drinkers['S7Q31A']==1)].dropna()
+NO_SA = drinkers[(drinkers['S7Q31A']==0)].dropna()
+
+sns.regplot(x='S2AQ8B',y='S2BQ3B', data=SA)
+stats.pearsonr(SA['S2AQ8B'],SA['S2BQ3B'])
+
+sns.regplot(x='S2AQ8B',y='S2BQ3B', data=NO_SA)
+stats.pearsonr(NO_SA['S2AQ8B'],NO_SA['S2BQ3B'])
+    
 #print('#S2AQ10 - HOW OFTEN DRANK ENOUGH TO FEEL INTOXICATED IN LAST 12 MONTHS')
 #['S2AQ8B'] NUMBER OF DRINKS OF ANY ALCOHOL USUALLY CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS
 #S2AQ8C LARGEST NUMBER OF DRINKS OF ANY ALCOHOL CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS

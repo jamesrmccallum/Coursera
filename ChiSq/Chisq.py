@@ -76,5 +76,3 @@ for key in combos:
         print('\n')
         i += 1
     del drinkers[label]
-
-print(result) 
