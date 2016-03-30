@@ -1,5 +1,6 @@
 import pandas as pd 
-import numpy 
+import numpy as np
+import matplotlib.pyplot as plt 
 import statsmodels.formula.api as smf
 import scipy.stats as stats 
 import itertools
@@ -16,30 +17,61 @@ pd.set_option('display.max_rows', None)
 drinkerstemp=data[(data['CONSUMER'] ==1) & ((data['S7Q31A']=='1') | (data['S7Q31A']=='2'))]
 
 #Get rid of everything unneeded 
-drinkers = drinkerstemp[['S7Q31A','S2AQ8B','S2AQ8C','S2AQ10','S2BQ1A2','S2BQ1A4','S2BQ1A7', 'S2BQ1A8','S2BQ3B']].copy()
+drinkers = drinkerstemp[['SEX','S7Q31A','S2AQ8B','S2AQ8C','S2AQ10','S2BQ1A2','S2BQ1A4','S2BQ1A7', 'S2BQ1A8','S2BQ3B']].copy()
 
 del drinkerstemp 
 del data
 
 for col in drinkers: # Convert columns to numeric and replace 99's and nulls
     drinkers[col] = drinkers[col].convert_objects(convert_numeric=True)
-    drinkers[col]=drinkers[col].replace(99 ,numpy.nan).fillna(numpy.nan)
+    drinkers[col]=drinkers[col].replace(99 ,np.nan).fillna(np.nan)
 
 for col in ['S2BQ1A2','S2BQ1A4','S2BQ1A7']: # Set missing values to Nan
-    drinkers[col]=drinkers[col].replace(9 ,numpy.nan).fillna(numpy.nan)
+    drinkers[col]=drinkers[col].replace(9 ,np.nan).fillna(np.nan)
     
 drinkers['S7Q31A'] = drinkers['S7Q31A'].map({1:1,2:0})
     
-# Does the presence of social anxiety moderate the relationship between the number of usual drinks and the amount of times drank to abuse
+# Moderator - Correlation
+# Does the presence of social anxiety moderate the relationship between the number of usual drinks and the amount of times drank to abuse?
 
 SA = drinkers[(drinkers['S7Q31A']==1)].dropna()
 NO_SA = drinkers[(drinkers['S7Q31A']==0)].dropna()
 
-sns.regplot(x='S2AQ8B',y='S2BQ3B', data=SA)
-stats.pearsonr(SA['S2AQ8B'],SA['S2BQ3B'])
+sns.regplot(x='S2AQ8C',y='S2BQ3B', data=SA)
+stats.pearsonr(SA['S2AQ8C'],SA['S2BQ3B'])
 
-sns.regplot(x='S2AQ8B',y='S2BQ3B', data=NO_SA)
-stats.pearsonr(NO_SA['S2AQ8B'],NO_SA['S2BQ3B'])
+sns.regplot(x='S2AQ8C',y='S2BQ3B', data=NO_SA)
+stats.pearsonr(NO_SA['S2AQ8C'],NO_SA['S2BQ3B'])
+
+# Moderator - ANOVA 
+# Does gender moderate the relationship between social anxiety and the number of usual drinks consumed? 
+
+sns.factorplot(x='S7Q31A',y='S2AQ8B',data=drinkers,kind='bar',ci=None)
+plt.xlabel('Respondent has social anxiety')
+plt.ylabel('Mean number of drinks ordinarily consumed')
+
+MALE = drinkers[(drinkers['SEX']==1)]
+FEMALE = drinkers[(drinkers['SEX']==2)]
+
+
+MALEMEAN = MALE.groupby(['S7Q31A']).aggregate(np.mean) 
+print(MALEMEAN['S2AQ8B'])
+model1 = smf.ols(formula = 'S2AQ8B ~ C(S7Q31A)',data=MALE).fit()
+print(model1.summary())
+
+sns.factorplot(x='S7Q31A',y='S2AQ8B',data=MALE,kind='bar',ci=None)
+plt.xlabel('Respondent has social anxiety')
+plt.ylabel('Mean number of drinks ordinarily consumed')
+
+
+FEMALEMEAN = FEMALE.groupby(['S7Q31A'],as_index=False).aggregate(np.mean)
+print(FEMALEMEAN['S2AQ8B'])
+model2 = smf.ols(formula = 'S2AQ8B ~ C(S7Q31A)',data=FEMALE).fit()
+print(model2.summary())
+
+sns.factorplot(x='S7Q31A',y='S2AQ8B',data=FEMALE,kind='bar',ci=None)
+plt.xlabel('Respondent has social anxiety')
+plt.ylabel('Mean number of drinks ordinarily consumed')
     
 #print('#S2AQ10 - HOW OFTEN DRANK ENOUGH TO FEEL INTOXICATED IN LAST 12 MONTHS')
 #['S2AQ8B'] NUMBER OF DRINKS OF ANY ALCOHOL USUALLY CONSUMED ON DAYS WHEN DRANK ALCOHOL IN LAST 12 MONTHS
